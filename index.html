@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AimPulse - Premium AI Aim Trainer</title>
+    <meta name="description" content="Master your aim with AimPulse, the high-performance FPS aim trainer. Experience smooth 60 FPS gameplay, real-time analytics, and dynamic difficulty scaling.">
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Main Menu -->
+        <div id="menu-overlay" class="overlay active">
+            <div class="content-box">
+                <h1 class="glitch" data-text="AIMPULSE">AIMPULSE</h1>
+                <p class="tagline">Precision is not an option. It's a standard.</p>
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="static">STATIC</button>
+                    <button class="mode-btn" data-mode="dynamic">DYNAMIC</button>
+                    <button class="mode-btn" data-mode="gridshot">GRIDSHOT</button>
+                </div>
+                <div class="high-scores">
+                    <p>PERSONAL BEST: <span id="pb-val">0</span></p>
+                </div>
+                <div class="difficulty-options">
+                    <button class="diff-btn active" data-time="30">30s</button>
+                    <button class="diff-btn" data-time="60">60s</button>
+                </div>
+                <div class="settings-mini">
+                    <label>
+                        <input type="checkbox" id="sfx-toggle" checked> ENABLE SFX
+                    </label>
+                    <button id="open-settings-btn" class="icon-btn">⚙️ SETTINGS</button>
+                </div>
+                <button id="start-btn" class="primary-btn">START TRAINING</button>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div class="hud-item timer-card">
+                <span class="label">TIME</span>
+                <span id="timer-val" class="value">00:00</span>
+            </div>
+            <div class="hud-stats">
+                <div class="hud-item">
+                    <span class="label">SCORE</span>
+                    <span id="score-val" class="value">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="label">ACCURACY</span>
+                    <span id="accuracy-val" class="value">100%</span>
+                </div>
+                <div class="hud-item combo-card">
+                    <span class="label">COMBO</span>
+                    <span id="combo-val" class="value">0x</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-overlay" class="overlay hidden">
+            <div class="content-box">
+                <h2>MISSION COMPLETE</h2>
+                <div class="rank-display">
+                    <span id="rank-name" class="rank-silver">BRONZE</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="label">FINAL SCORE</span>
+                        <span id="final-score" class="value highlight">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">ACCURACY</span>
+                        <span id="final-accuracy" class="value">0%</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">AVG REACTION</span>
+                        <span id="avg-reaction" class="value">0ms</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">HITS / MISSES</span>
+                        <span id="hits-misses" class="value">0 / 0</span>
+                    </div>
+                </div>
+                <div class="submission-box">
+                    <input type="text" id="user-name" placeholder="ENTER YOUR NAME" maxlength="15">
+                    <button id="restart-btn" class="primary-btn">RETRY</button>
+                    <button id="view-leaderboard-btn" class="secondary-btn">RANKS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Modal -->
+        <div id="leaderboard-overlay" class="overlay hidden">
+            <div class="content-box wide">
+                <h2>GLOBAL RANKINGS</h2>
+                <div class="table-container">
+                    <table id="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>RANK</th>
+                                <th>PLAYER</th>
+                                <th>SCORE</th>
+                                <th>ACC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="close-leaderboard-btn" class="primary-btn">BACK</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-overlay" class="overlay hidden">
+            <div class="content-box">
+                <h2>SETTINGS</h2>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>SENSITIVITY</label>
+                        <input type="range" id="sensitivity-slider" min="0.1" max="5.0" step="0.1" value="1.0">
+                        <span id="sens-val">1.0</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>RETICLE SIZE</label>
+                        <input type="range" id="reticle-size-slider" min="5" max="30" step="1" value="15">
+                        <span id="reticle-val">15px</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>RETICLE COLOR</label>
+                        <input type="color" id="reticle-color-picker" value="#00f2ff">
+                    </div>
+                    <div class="setting-item">
+                        <label>TARGET COLOR</label>
+                        <input type="color" id="target-color-picker" value="#00f2ff">
+                    </div>
+                </div>
+                <button id="close-settings-btn" class="primary-btn">APPLY & CLOSE</button>
+            </div>
+        </div>
+
+        <!-- Countdown Overlay -->
+        <div id="countdown-overlay" class="overlay hidden no-blur">
+            <div id="countdown-text">3</div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div id="custom-cursor"></div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
