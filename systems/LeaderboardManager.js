@@ -18,6 +18,7 @@ export class LeaderboardManager {
      * Get the rank name based on score
      */
     getRankTier(score) {
+        if (score >= 15000) return { name: 'ASCENDANT', class: 'rank-diamond' };
         if (score >= 10000) return { name: 'DIAMOND', class: 'rank-diamond' };
         if (score >= 7500) return { name: 'PLATINUM', class: 'rank-platinum' };
         if (score >= 5000) return { name: 'GOLD', class: 'rank-gold' };

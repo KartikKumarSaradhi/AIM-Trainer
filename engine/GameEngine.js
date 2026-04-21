@@ -17,7 +17,7 @@ export class GameEngine {
     this.scoreManager = new ScoreManager();
     this.targetManager = new TargetManager(canvas, this.scoreManager, (time) => {
         this.currentTime += time;
-    });
+    }, (amount) => this.triggerShake(amount));
 
     this.isPaused = true;
     this.gameActive = false;
@@ -27,7 +27,15 @@ export class GameEngine {
     this.lastTickTime = 0;
     this.animationId = null;
 
+    // Phase 3: Screen Shake
+    this.shakeAmount = 0;
+    this.shakeDecay = 0.9;
+
     this.init();
+  }
+
+  triggerShake(amount = 5) {
+    this.shakeAmount = amount;
   }
 
   init() {
@@ -95,6 +103,11 @@ export class GameEngine {
     this.isPaused = true;
     if (this.animationId) cancelAnimationFrame(this.animationId);
 
+    // Release Pointer Lock
+    if (document.pointerLockElement === this.canvas) {
+        document.exitPointerLock();
+    }
+
     // Show Results
     this.scoreManager.updateResults();
     setTimeout(() => {
@@ -132,17 +145,32 @@ export class GameEngine {
 
     this.updateHUD();
     this.targetManager.update(delta);
+
+    // Update screen shake
+    if (this.shakeAmount > 0.1) {
+      this.shakeAmount *= this.shakeDecay;
+    } else {
+      this.shakeAmount = 0;
+    }
   }
 
   render() {
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Subtle background grid or pattern if desired
-    // (Omitted for performance, but background CSS gradient is handled)
+    this.ctx.save();
+    
+    // Apply Screen Shake
+    if (this.shakeAmount > 0) {
+      const sx = (Math.random() - 0.5) * this.shakeAmount;
+      const sy = (Math.random() - 0.5) * this.shakeAmount;
+      this.ctx.translate(sx, sy);
+    }
 
     // Render targets
     this.targetManager.render(this.ctx);
+
+    this.ctx.restore();
   }
 
   updateHUD() {

@@ -23,6 +23,8 @@ export class ScoreManager {
     this.finalScore = document.getElementById('final-score');
     this.finalAccuracy = document.getElementById('final-accuracy');
     this.avgReaction = document.getElementById('avg-reaction');
+    this.bestReaction = document.getElementById('best-reaction');
+    this.consistencyVal = document.getElementById('consistency-val');
     this.hitsMissesDisplay = document.getElementById('hits-misses');
 
     this.updateHUD();
@@ -79,10 +81,12 @@ export class ScoreManager {
 
   updateResults() {
     try {
-        const avgReaction = this.getAverageReactionTime();
+        const stats = this.reactionTracker.getStats();
         if (this.finalScore) this.finalScore.textContent = this.score;
         if (this.finalAccuracy) this.finalAccuracy.textContent = `${this.accuracy}%`;
-        if (this.avgReaction) this.avgReaction.textContent = `${avgReaction}ms`;
+        if (this.avgReaction) this.avgReaction.textContent = `${stats.avg}ms`;
+        if (this.bestReaction) this.bestReaction.textContent = `${stats.best}ms`;
+        if (this.consistencyVal) this.consistencyVal.textContent = `±${stats.consistency}ms`;
         if (this.hitsMissesDisplay) this.hitsMissesDisplay.textContent = `${this.hits} / ${this.misses}`;
     } catch (err) {
         console.warn("Results Update Error:", err);

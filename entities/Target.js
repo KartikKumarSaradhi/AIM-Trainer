@@ -4,10 +4,12 @@ export class Target {
   constructor(x, y, radius, isDynamic = false, type = CONFIG.TARGET_TYPES.NORMAL) {
     this.x = x;
     this.y = y;
-    this.initialRadius = radius;
-    this.radius = radius;
-    this.isDynamic = isDynamic;
     this.type = type;
+    
+    // Micro targets are 50% smaller
+    this.initialRadius = (type === CONFIG.TARGET_TYPES.MICRO) ? radius * 0.5 : radius;
+    this.radius = this.initialRadius;
+    this.isDynamic = isDynamic;
 
     // Armor needs 2 hits
     this.health = (type === CONFIG.TARGET_TYPES.ARMOR) ? 2 : 1;
@@ -82,6 +84,9 @@ export class Target {
     } else if (this.type === CONFIG.TARGET_TYPES.ARMOR) {
         strokeColor = CONFIG.COLORS.ACCENT_ARMOR;
         fillColor = 'rgba(0, 204, 255, 0.3)';
+    } else if (this.type === CONFIG.TARGET_TYPES.MICRO) {
+        strokeColor = CONFIG.COLORS.ACCENT_MICRO;
+        fillColor = 'rgba(255, 0, 255, 0.3)';
     }
 
     // Outer ring

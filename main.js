@@ -112,12 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const reticleSlider = document.getElementById('reticle-size-slider');
     const reticleColorPicker = document.getElementById('reticle-color-picker');
     const targetColorPicker = document.getElementById('target-color-picker');
+    const volumeSlider = document.getElementById('volume-slider');
 
     const applySettings = () => {
         engine.inputManager.updateSettings({
+            sensitivity: userSettings.SENSITIVITY,
             reticleSize: userSettings.RETICLE_SIZE,
             reticleColor: userSettings.RETICLE_COLOR
         });
+        engine.targetManager.audio.setVolume(userSettings.VOLUME);
         // Update visual constants
         CONFIG.COLORS.TARGET_STROKE = userSettings.TARGET_COLOR;
         CONFIG.COLORS.TARGET_FILL = userSettings.TARGET_COLOR + '66'; // add alpha
@@ -128,8 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         reticleSlider.value = userSettings.RETICLE_SIZE;
         reticleColorPicker.value = userSettings.RETICLE_COLOR;
         targetColorPicker.value = userSettings.TARGET_COLOR;
+        volumeSlider.value = userSettings.VOLUME;
         document.getElementById('sens-val').textContent = userSettings.SENSITIVITY;
         document.getElementById('reticle-val').textContent = `${userSettings.RETICLE_SIZE}px`;
+        document.getElementById('volume-val').textContent = `${Math.round(userSettings.VOLUME * 100)}%`;
         applySettings();
     };
 
@@ -144,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userSettings.RETICLE_SIZE = parseInt(reticleSlider.value);
         userSettings.RETICLE_COLOR = reticleColorPicker.value;
         userSettings.TARGET_COLOR = targetColorPicker.value;
+        userSettings.VOLUME = parseFloat(volumeSlider.value);
 
         localStorage.setItem(CONFIG.STORAGE_KEYS.SETTINGS, JSON.stringify(userSettings));
         applySettings();
@@ -155,8 +161,63 @@ document.addEventListener('DOMContentLoaded', () => {
     // Live labels
     sensSlider.addEventListener('input', (e) => document.getElementById('sens-val').textContent = e.target.value);
     reticleSlider.addEventListener('input', (e) => document.getElementById('reticle-val').textContent = `${e.target.value}px`);
+    volumeSlider.addEventListener('input', (e) => {
+        document.getElementById('volume-val').textContent = `${Math.round(e.target.value * 100)}%`;
+        engine.targetManager.audio.setVolume(parseFloat(e.target.value));
+    });
 
     loadSettingsUI();
+
+    /**
+     * History Logic
+     */
+    const historyOverlay = document.getElementById('history-overlay');
+    const historyBody = document.getElementById('history-body');
+    const chartContainer = document.getElementById('history-chart-container');
+
+    const showHistory = () => {
+        const history = JSON.parse(localStorage.getItem('aimpulse_history') || '[]');
+        historyBody.innerHTML = '';
+        chartContainer.innerHTML = '';
+
+        if (history.length === 0) {
+            historyBody.innerHTML = '<tr><td colspan="5" style="text-align:center">No sessions recorded yet.</td></tr>';
+        } else {
+            // Populate Table (Reverse chronological)
+            [...history].reverse().forEach(entry => {
+                const row = document.createElement('tr');
+                const date = new Date(entry.date).toLocaleDateString();
+                row.innerHTML = `
+                    <td>${date}</td>
+                    <td>${entry.mode.toUpperCase()}</td>
+                    <td>${entry.score}</td>
+                    <td>${entry.accuracy}%</td>
+                    <td>${entry.avgReaction}ms</td>
+                `;
+                historyBody.appendChild(row);
+            });
+
+            // Populate Simple Bar Chart (Chronological)
+            const maxScore = Math.max(...history.map(h => h.score), 1);
+            history.forEach(entry => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                const height = (entry.score / maxScore) * 100;
+                bar.style.height = `${height}%`;
+                bar.setAttribute('data-value', entry.score);
+                chartContainer.appendChild(bar);
+            });
+        }
+
+        historyOverlay.classList.remove('hidden');
+        historyOverlay.classList.add('active');
+    };
+
+    document.getElementById('open-history-btn').addEventListener('click', showHistory);
+    document.getElementById('close-history-btn').addEventListener('click', () => {
+        historyOverlay.classList.remove('active');
+        historyOverlay.classList.add('hidden');
+    });
 
     // Start Session Action
     startBtn.addEventListener('click', () => {
@@ -192,6 +253,23 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(CONFIG.STORAGE_KEYS.HIGH_SCORES, JSON.stringify(highScores));
             updatePBDisplay();
         }
+
+        // Save session history for analytics
+        const history = JSON.parse(localStorage.getItem('aimpulse_history') || '[]');
+        const stats = engine.scoreManager.reactionTracker.getStats();
+        history.push({
+            date: new Date().toISOString(),
+            mode: selectedMode,
+            duration: selectedDuration,
+            score: score,
+            accuracy: engine.scoreManager.accuracy,
+            avgReaction: stats.avg,
+            bestReaction: stats.best,
+            consistency: stats.consistency
+        });
+        // Keep last 50 sessions
+        if (history.length > 50) history.shift();
+        localStorage.setItem('aimpulse_history', JSON.stringify(history));
     };
 
     // Override stopGame to save score and update rank UI

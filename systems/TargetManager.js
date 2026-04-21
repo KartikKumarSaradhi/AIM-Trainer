@@ -4,10 +4,11 @@ import { ParticleManager } from './ParticleManager.js';
 import { AudioManager } from '../engine/AudioManager.js';
 
 export class TargetManager {
-  constructor(canvas, scoreManager, timeBonusCallback) {
+  constructor(canvas, scoreManager, timeBonusCallback, shakeCallback) {
     this.canvas = canvas;
     this.scoreManager = scoreManager;
     this.timeBonusCallback = timeBonusCallback;
+    this.shakeCallback = shakeCallback;
     this.particles = new ParticleManager();
     this.audio = new AudioManager();
     this.targets = [];
@@ -63,6 +64,7 @@ export class TargetManager {
       if (target.isDead && !target.isHit) {
         this.scoreManager.recordMiss();
         if (this.audio) this.audio.playMiss();
+        if (this.shakeCallback) this.shakeCallback(10); // Bigger shake for time-out miss
         this.targets.splice(i, 1);
         
         // Replace target in gridshot
@@ -79,9 +81,25 @@ export class TargetManager {
   }
 
   spawnTarget() {
-    const margin = this.currentRadius + 40;
-    const x = Math.random() * (this.canvas.width - 2 * margin) + margin;
-    const y = Math.random() * (this.canvas.height - 2 * margin) + margin;
+    let marginX = this.currentRadius + 40;
+    let marginY = this.currentRadius + 40;
+    let width = this.canvas.width - 2 * marginX;
+    let height = this.canvas.height - 2 * marginY;
+    let offsetX = marginX;
+    let offsetY = marginY;
+
+    // Gridshot targets should be more centralized
+    if (this.mode === CONFIG.MODES.GRIDSHOT) {
+      const gridWidth = this.canvas.width * 0.6;
+      const gridHeight = this.canvas.height * 0.6;
+      width = gridWidth;
+      height = gridHeight;
+      offsetX = (this.canvas.width - gridWidth) / 2;
+      offsetY = (this.canvas.height - gridHeight) / 2;
+    }
+
+    const x = Math.random() * width + offsetX;
+    const y = Math.random() * height + offsetY;
 
     // Pick a random target type
     let type = CONFIG.TARGET_TYPES.NORMAL;
@@ -92,6 +110,8 @@ export class TargetManager {
         type = CONFIG.TARGET_TYPES.BOMB;
     } else if (rand < CONFIG.PROBABILITIES.BONUS + CONFIG.PROBABILITIES.BOMB + CONFIG.PROBABILITIES.ARMOR) {
         type = CONFIG.TARGET_TYPES.ARMOR;
+    } else if (rand < CONFIG.PROBABILITIES.BONUS + CONFIG.PROBABILITIES.BOMB + CONFIG.PROBABILITIES.ARMOR + CONFIG.PROBABILITIES.MICRO) {
+        type = CONFIG.TARGET_TYPES.MICRO;
     }
 
     const isDynamic = this.mode === CONFIG.MODES.DYNAMIC;
@@ -113,6 +133,7 @@ export class TargetManager {
 
                 if (result.destroyed) {
                     this.audio.playHit(this.scoreManager.combo);
+                    if (this.shakeCallback) this.shakeCallback(4); // Small shake for hit
                     this.particles.createExplosion(target.x, target.y, CONFIG.COLORS.TARGET_STROKE);
                     this.handleTargetEffect(target, reactionTime);
                     this.adjustDifficulty();
@@ -128,6 +149,7 @@ export class TargetManager {
         if (!hit) {
             this.scoreManager.recordMiss();
             this.audio.playMiss();
+            if (this.shakeCallback) this.shakeCallback(8); // Medium shake for click miss
         }
     } catch (err) {
         console.error("Click Handling Error:", err);
@@ -160,6 +182,11 @@ export class TargetManager {
             sm.recordHit(reactionTime);
             popupText = "+SCORE";
             popupColor = CONFIG.COLORS.ACCENT_ARMOR;
+            break;
+        case CONFIG.TARGET_TYPES.MICRO:
+            sm.recordHit(reactionTime);
+            popupText = "PRECISION!";
+            popupColor = CONFIG.COLORS.ACCENT_MICRO;
             break;
         default:
             sm.recordHit(reactionTime);

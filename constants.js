@@ -41,6 +41,7 @@ export const CONFIG = {
     ARMOR: 'armor',
     BONUS: 'bonus',
     BOMB: 'bomb',
+    MICRO: 'micro',
   },
 
   // Target Probabilities (percent)
@@ -48,6 +49,7 @@ export const CONFIG = {
     ARMOR: 10,
     BONUS: 5,
     BOMB: 7,
+    MICRO: 15,
   },
 
   // UI Colors
@@ -57,6 +59,7 @@ export const CONFIG = {
     ACCENT_RED: '#ff3e3e',
     ACCENT_GREEN: '#39ff14',
     ACCENT_ARMOR: '#00ccff',
+    ACCENT_MICRO: '#ff00ff',
     TARGET_FILL: 'rgba(0, 242, 255, 0.4)',
     TARGET_STROKE: '#00f2ff',
     TARGET_INNER: '#ffffff',
